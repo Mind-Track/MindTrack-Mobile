@@ -9,63 +9,43 @@ import {
   TouchableOpacity,
   Alert,
 } from 'react-native';
+import { submitCheckIn } from '../services/checkinService';
 
 export default function Dashboard({ navigation }) {
-  const [checkInStates, setCheckInStates] = useState([false, false, false, false, false]);
   const [selectedButton, setSelectedButton] = useState(null);
   const [comment, setComment] = useState('');
 
-  useEffect(() => {
-    loadCheckInState();
-  }, []);
-
+  // Função para selecionar um botão
   const selectButton = (index) => {
     setSelectedButton(index);
   };
 
-  const submitCheckIn = () => {
+  // Função para enviar o check-in
+  const handleSubmitCheckIn = async () => {
+    // Valida se o botão foi selecionado
     if (selectedButton === null) {
       Alert.alert('Erro', 'Selecione um botão antes de enviar!');
       return;
     }
 
-    const updatedCheckInStates = [...checkInStates];
-    updatedCheckInStates[selectedButton] = true;
-
-    const checkInLog = {
-      button: selectedButton + 1,
-      status: updatedCheckInStates[selectedButton],
-      comment,
-      timestamp: new Date().toISOString(),
+    // Dados do check-in
+    const checkInData = {
+      idFuncionario: 1, 
+      nivelHumor: selectedButton + 1, 
+      comentario: comment,
+      dataHora: new Date().toISOString(), 
     };
 
-    setCheckInStates(updatedCheckInStates);
-    saveCheckInState(updatedCheckInStates);
-    logCheckIn(checkInLog);
-
-    // Resetar campos
-    setSelectedButton(null);
-    setComment('');
-
-    Alert.alert('Sucesso', 'Check-in enviado com sucesso!');
-    console.log('Check-in enviado:', checkInLog);
-  };
-
-  const saveCheckInState = (states) => {
-    localStorage.setItem('checkInStates', JSON.stringify(states));
-  };
-
-  const loadCheckInState = () => {
-    const savedStates = JSON.parse(localStorage.getItem('checkInStates') || '[]');
-    if (savedStates.length) {
-      setCheckInStates(savedStates);
+    try {
+      // Envia os dados do check-in para o backend
+      await submitCheckIn(checkInData);
+      Alert.alert('Sucesso', 'Check-in enviado com sucesso!');
+      setSelectedButton(null); // Reseta a seleção do botão
+      setComment(''); // Limpa o campo de comentário
+    } catch (error) {
+      Alert.alert('Erro', 'Não foi possível enviar o check-in.');
+      console.error('Erro ao enviar check-in:', error);
     }
-  };
-
-  const logCheckIn = (log) => {
-    let checkInLogs = JSON.parse(localStorage.getItem('checkInLogs') || '[]');
-    checkInLogs.push(log);
-    localStorage.setItem('checkInLogs', JSON.stringify(checkInLogs));
   };
 
   return (
@@ -74,13 +54,10 @@ export default function Dashboard({ navigation }) {
       <View style={styles.section}>
         <Text style={styles.title}>Check-in Diário</Text>
         <View style={styles.buttonGroup}>
-          {checkInStates.map((state, index) => (
+          {[0, 1, 2, 3, 4].map((_, index) => (
             <TouchableOpacity
               key={index}
-              style={[
-                styles.checkInButton,
-                selectedButton === index && styles.activeButton,
-              ]}
+              style={[styles.checkInButton, selectedButton === index && styles.activeButton]}
               onPress={() => selectButton(index)}
             >
               <Text style={styles.buttonText}>{index + 1}</Text>
@@ -89,17 +66,14 @@ export default function Dashboard({ navigation }) {
         </View>
         <TextInput
           style={styles.textInput}
-          placeholder="Faça um comentário..."
+          placeholder="Adicione um comentário..."
           multiline
           value={comment}
           onChangeText={setComment}
         />
         <TouchableOpacity
-          style={[
-            styles.submitButton,
-            selectedButton === null && styles.disabledButton,
-          ]}
-          onPress={submitCheckIn}
+          style={[styles.submitButton, selectedButton === null && styles.disabledButton]}
+          onPress={handleSubmitCheckIn}
           disabled={selectedButton === null}
         >
           <Text style={styles.submitText}>Enviar</Text>
@@ -116,19 +90,19 @@ export default function Dashboard({ navigation }) {
       <View style={styles.section}>
         <Text style={styles.title}>Dica de Saúde do Dia</Text>
         <Text style={styles.tip}>
-          Aqui vai o texto explicativo ou informativo relevante para o usuário. Você pode adicionar mais informações conforme necessário.
+          Reserve 10 minutos do seu dia para meditar e cuidar de sua saúde mental.
         </Text>
       </View>
 
       <View style={styles.container}>
-    
-      <View style={styles.buttonContainer}>
-        <Button
-          title="Histórico"
-          onPress={() => navigation.navigate('Histórico')}
-        />
-      </View>
-    </View>
+          <View style={styles.buttonContainer}>
+            <Button
+              title="Histórico"
+              onPress={() => navigation.navigate('Histórico')}
+            />
+          </View>
+          </View>
+      
     </ScrollView>
   );
 }
@@ -201,20 +175,27 @@ const styles = StyleSheet.create({
   disabledButton: {
     backgroundColor: '#d3d3d3',
   },
-  noSurveys: {
-    color: '#fff',
-    fontSize: 14,
-    textAlign: 'center',
-  },
   tip: {
     color: '#fff',
     fontSize: 14,
     textAlign: 'center',
   },
   buttonContainer: {
-    position: 'absolute',  
-    bottom: 20,            
-    right: 20,             
-    zIndex: 1,             
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    zIndex: 1,
+  },
+  historyButton: {
+    backgroundColor: '#244a9c',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  historyButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });

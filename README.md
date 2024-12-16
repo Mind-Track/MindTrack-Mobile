@@ -16,6 +16,9 @@ expo install react-native-screens react-native-safe-area-context react-native-ge
 
 npm install -g expo-cli
 
+npm install axios
+
+
 
 comando de iniciar projeto:
 
