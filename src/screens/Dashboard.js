@@ -10,7 +10,7 @@ import {
   Alert,
 } from 'react-native';
 
-export default function App() {
+export default function Dashboard({ navigation }) {
   const [checkInStates, setCheckInStates] = useState([false, false, false, false, false]);
   const [selectedButton, setSelectedButton] = useState(null);
   const [comment, setComment] = useState('');
@@ -119,6 +119,16 @@ export default function App() {
           Aqui vai o texto explicativo ou informativo relevante para o usuário. Você pode adicionar mais informações conforme necessário.
         </Text>
       </View>
+
+      <View style={styles.container}>
+    
+      <View style={styles.buttonContainer}>
+        <Button
+          title="Histórico"
+          onPress={() => navigation.navigate('Histórico')}
+        />
+      </View>
+    </View>
     </ScrollView>
   );
 }
@@ -200,5 +210,11 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     textAlign: 'center',
+  },
+  buttonContainer: {
+    position: 'absolute',  
+    bottom: 20,            
+    right: 20,             
+    zIndex: 1,             
   },
 });
