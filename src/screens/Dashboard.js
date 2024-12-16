@@ -3,6 +3,7 @@ import {
   StyleSheet,
   Text,
   View,
+  Button,
   TextInput,
   ScrollView,
   TouchableOpacity,
@@ -10,7 +11,7 @@ import {
 } from 'react-native';
 import { submitCheckIn } from '../services/checkinService';
 
-export default function Dashboard( {navigation} ) {
+export default function Dashboard({ navigation }) {
   const [selectedButton, setSelectedButton] = useState(null);
   const [comment, setComment] = useState('');
 
@@ -21,7 +22,7 @@ export default function Dashboard( {navigation} ) {
 
   // Função para enviar o check-in
   const handleSubmitCheckIn = async () => {
-    console.log(checkInData);
+    // Valida se o botão foi selecionado
     if (selectedButton === null) {
       Alert.alert('Erro', 'Selecione um botão antes de enviar!');
       return;
@@ -29,15 +30,15 @@ export default function Dashboard( {navigation} ) {
 
     // Dados do check-in
     const checkInData = {
-      idFuncionario: 123, // ID do funcionário (pode ser dinâmico)
-      status: true,
-      button: selectedButton + 1, // Qual botão foi selecionado
-      comment,
-      timestamp: new Date().toISOString(), // Data e hora do check-in
+      idFuncionario: 1, 
+      nivelHumor: selectedButton + 1, 
+      comentario: comment,
+      dataHora: new Date().toISOString(), 
     };
 
     try {
-      await submitCheckIn(checkInData); // Chama o serviço da API
+      // Envia os dados do check-in para o backend
+      await submitCheckIn(checkInData);
       Alert.alert('Sucesso', 'Check-in enviado com sucesso!');
       setSelectedButton(null); // Reseta a seleção do botão
       setComment(''); // Limpa o campo de comentário
@@ -56,10 +57,7 @@ export default function Dashboard( {navigation} ) {
           {[0, 1, 2, 3, 4].map((_, index) => (
             <TouchableOpacity
               key={index}
-              style={[
-                styles.checkInButton,
-                selectedButton === index && styles.activeButton,
-              ]}
+              style={[styles.checkInButton, selectedButton === index && styles.activeButton]}
               onPress={() => selectButton(index)}
             >
               <Text style={styles.buttonText}>{index + 1}</Text>
@@ -74,10 +72,7 @@ export default function Dashboard( {navigation} ) {
           onChangeText={setComment}
         />
         <TouchableOpacity
-          style={[
-            styles.submitButton,
-            selectedButton === null && styles.disabledButton,
-          ]}
+          style={[styles.submitButton, selectedButton === null && styles.disabledButton]}
           onPress={handleSubmitCheckIn}
           disabled={selectedButton === null}
         >
@@ -85,13 +80,11 @@ export default function Dashboard( {navigation} ) {
         </TouchableOpacity>
       </View>
 
-
       {/* Questionários Pendentes */}
       <View style={styles.section}>
         <Text style={styles.title}>Questionários Pendentes</Text>
         <Text style={styles.noSurveys}>Parabéns! Não há questionários pendentes!</Text>
       </View>
-
 
       {/* Dica de Saúde do Dia */}
       <View style={styles.section}>
@@ -102,14 +95,14 @@ export default function Dashboard( {navigation} ) {
       </View>
 
       <View style={styles.container}>
-    
-      <View style={styles.buttonContainer}>
-        <Button
-          title="Histórico"
-          onPress={() => navigation.navigate('Histórico')}
-        />
-      </View>
-    </View>
+          <View style={styles.buttonContainer}>
+            <Button
+              title="Histórico"
+              onPress={() => navigation.navigate('Histórico')}
+            />
+          </View>
+          </View>
+      
     </ScrollView>
   );
 }
@@ -188,9 +181,21 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   buttonContainer: {
-    position: 'absolute',  
-    bottom: 20,            
-    right: 20,             
-    zIndex: 1,             
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    zIndex: 1,
+  },
+  historyButton: {
+    backgroundColor: '#244a9c',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  historyButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
