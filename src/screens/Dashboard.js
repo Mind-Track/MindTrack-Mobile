@@ -3,69 +3,48 @@ import {
   StyleSheet,
   Text,
   View,
-  Button,
   TextInput,
   ScrollView,
   TouchableOpacity,
   Alert,
 } from 'react-native';
+import { submitCheckIn } from '../services/checkinService';
 
-export default function App() {
-  const [checkInStates, setCheckInStates] = useState([false, false, false, false, false]);
+export default function Dashboard() {
   const [selectedButton, setSelectedButton] = useState(null);
   const [comment, setComment] = useState('');
 
-  useEffect(() => {
-    loadCheckInState();
-  }, []);
-
+  // Função para selecionar um botão
   const selectButton = (index) => {
     setSelectedButton(index);
   };
 
-  const submitCheckIn = () => {
+  // Função para enviar o check-in
+  const handleSubmitCheckIn = async () => {
+    console.log(checkInData);
     if (selectedButton === null) {
       Alert.alert('Erro', 'Selecione um botão antes de enviar!');
       return;
     }
 
-    const updatedCheckInStates = [...checkInStates];
-    updatedCheckInStates[selectedButton] = true;
-
-    const checkInLog = {
-      button: selectedButton + 1,
-      status: updatedCheckInStates[selectedButton],
+    // Dados do check-in
+    const checkInData = {
+      idFuncionario: 123, // ID do funcionário (pode ser dinâmico)
+      status: true,
+      button: selectedButton + 1, // Qual botão foi selecionado
       comment,
-      timestamp: new Date().toISOString(),
+      timestamp: new Date().toISOString(), // Data e hora do check-in
     };
 
-    setCheckInStates(updatedCheckInStates);
-    saveCheckInState(updatedCheckInStates);
-    logCheckIn(checkInLog);
-
-    // Resetar campos
-    setSelectedButton(null);
-    setComment('');
-
-    Alert.alert('Sucesso', 'Check-in enviado com sucesso!');
-    console.log('Check-in enviado:', checkInLog);
-  };
-
-  const saveCheckInState = (states) => {
-    localStorage.setItem('checkInStates', JSON.stringify(states));
-  };
-
-  const loadCheckInState = () => {
-    const savedStates = JSON.parse(localStorage.getItem('checkInStates') || '[]');
-    if (savedStates.length) {
-      setCheckInStates(savedStates);
+    try {
+      await submitCheckIn(checkInData); // Chama o serviço da API
+      Alert.alert('Sucesso', 'Check-in enviado com sucesso!');
+      setSelectedButton(null); // Reseta a seleção do botão
+      setComment(''); // Limpa o campo de comentário
+    } catch (error) {
+      Alert.alert('Erro', 'Não foi possível enviar o check-in.');
+      console.error('Erro ao enviar check-in:', error);
     }
-  };
-
-  const logCheckIn = (log) => {
-    let checkInLogs = JSON.parse(localStorage.getItem('checkInLogs') || '[]');
-    checkInLogs.push(log);
-    localStorage.setItem('checkInLogs', JSON.stringify(checkInLogs));
   };
 
   return (
@@ -74,7 +53,7 @@ export default function App() {
       <View style={styles.section}>
         <Text style={styles.title}>Check-in Diário</Text>
         <View style={styles.buttonGroup}>
-          {checkInStates.map((state, index) => (
+          {[0, 1, 2, 3, 4].map((_, index) => (
             <TouchableOpacity
               key={index}
               style={[
@@ -89,7 +68,7 @@ export default function App() {
         </View>
         <TextInput
           style={styles.textInput}
-          placeholder="Faça um comentário..."
+          placeholder="Adicione um comentário..."
           multiline
           value={comment}
           onChangeText={setComment}
@@ -99,12 +78,13 @@ export default function App() {
             styles.submitButton,
             selectedButton === null && styles.disabledButton,
           ]}
-          onPress={submitCheckIn}
+          onPress={handleSubmitCheckIn}
           disabled={selectedButton === null}
         >
           <Text style={styles.submitText}>Enviar</Text>
         </TouchableOpacity>
       </View>
+
 
       {/* Questionários Pendentes */}
       <View style={styles.section}>
@@ -112,11 +92,12 @@ export default function App() {
         <Text style={styles.noSurveys}>Parabéns! Não há questionários pendentes!</Text>
       </View>
 
+
       {/* Dica de Saúde do Dia */}
       <View style={styles.section}>
         <Text style={styles.title}>Dica de Saúde do Dia</Text>
         <Text style={styles.tip}>
-          Aqui vai o texto explicativo ou informativo relevante para o usuário. Você pode adicionar mais informações conforme necessário.
+          Reserve 10 minutos do seu dia para meditar e cuidar de sua saúde mental.
         </Text>
       </View>
     </ScrollView>
@@ -190,11 +171,6 @@ const styles = StyleSheet.create({
   },
   disabledButton: {
     backgroundColor: '#d3d3d3',
-  },
-  noSurveys: {
-    color: '#fff',
-    fontSize: 14,
-    textAlign: 'center',
   },
   tip: {
     color: '#fff',
