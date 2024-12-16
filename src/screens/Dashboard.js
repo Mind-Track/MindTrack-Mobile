@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { submitCheckIn } from '../services/checkinService';
 
-export default function Dashboard() {
+export default function Dashboard( {navigation} ) {
   const [selectedButton, setSelectedButton] = useState(null);
   const [comment, setComment] = useState('');
 
@@ -100,6 +100,16 @@ export default function Dashboard() {
           Reserve 10 minutos do seu dia para meditar e cuidar de sua saúde mental.
         </Text>
       </View>
+
+      <View style={styles.container}>
+    
+      <View style={styles.buttonContainer}>
+        <Button
+          title="Histórico"
+          onPress={() => navigation.navigate('Histórico')}
+        />
+      </View>
+    </View>
     </ScrollView>
   );
 }
@@ -176,5 +186,11 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     textAlign: 'center',
+  },
+  buttonContainer: {
+    position: 'absolute',  
+    bottom: 20,            
+    right: 20,             
+    zIndex: 1,             
   },
 });
