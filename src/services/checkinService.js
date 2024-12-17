@@ -15,4 +15,15 @@ export const submitCheckIn = async (data) => {
         Alert.alert('Erro', 'Não foi possível enviar o check-in.');
       }
   };
+
+  export const fetchCheckins = async() => {
+    try{
+      const response = await api.get('/historico/1')
+      //const data = await response.json();
+      return response.data;
+    }catch (error){
+      console.log("Erro ao buscar check-ins:", error.message);
+      throw error;
+    }
+  };
   

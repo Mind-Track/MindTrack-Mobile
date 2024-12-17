@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, Button, FlatList, ActivityIndicator } from 'react-native';
-
+import { fetchCheckins } from '../services/checkinService';
 // Mapear os emojis com base no nível de humor
 const humorEmojis = {
   "1": "😡", // Muito Ruim
@@ -24,21 +24,18 @@ export default function Historico({ navigation }) {
   const [loading, setLoading] = useState(true); // Estado de carregamento
   const [error, setError] = useState(null); // Estado para lidar com erros
 
-  // Função para buscar dados da API
-  const fetchCheckins = async () => {
-    try {
-      const response = await fetch("http://localhost:8080/historico/1");
-      const data = await response.json();
-      setCheckins(data); // Atualiza os dados no estado
-    } catch (err) {
-      setError("Erro ao carregar dados da API"); // Armazena o erro, se houver
-    } finally {
-      setLoading(false); // Finaliza o carregamento
-    }
-  };
-
   useEffect(() => {
-    fetchCheckins(); // Chama a função ao montar o componente
+    const carregaCheckins = async () =>{
+      try{
+        const data = await fetchCheckins();
+        setCheckins(data);
+      }catch (error){
+        setError("Erro ao carregar dados da API");
+      }finally{
+        setLoading(false);
+      }
+    };
+    carregaCheckins();
   }, []);
 
   // Renderiza cada item da lista
