@@ -10,6 +10,17 @@ import {
   Alert,
 } from 'react-native';
 import { submitCheckIn } from '../services/checkinService';
+import { Image } from 'react-native';
+
+// Importe as imagens manualmente
+const emojis = [
+  require('../assets/images/emojis1.png'),
+  require('../assets/images/emojis2.png'),
+  require('../assets/images/emojis3.png'),
+  require('../assets/images/emojis4.png'),
+  require('../assets/images/emojis5.png'),
+];
+
 
 export default function Dashboard({ navigation }) {
   const [selectedButton, setSelectedButton] = useState(null);
@@ -54,13 +65,16 @@ export default function Dashboard({ navigation }) {
       <View style={styles.section}>
         <Text style={styles.title}>Check-in Diário</Text>
         <View style={styles.buttonGroup}>
-          {[0, 1, 2, 3, 4].map((_, index) => (
+          {emojis.map((emoji, index) => (
             <TouchableOpacity
               key={index}
-              style={[styles.checkInButton, selectedButton === index && styles.activeButton]}
+              style={[
+                styles.checkInButton,
+                selectedButton === index && styles.activeButton,
+              ]}
               onPress={() => selectButton(index)}
             >
-              <Text style={styles.buttonText}>{index + 1}</Text>
+              <Image source={emoji} style={styles.image} />
             </TouchableOpacity>
           ))}
         </View>
@@ -197,5 +211,13 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  image: {
+    width: 50,  
+    height: 50, 
+    position: 'absolute', 
+    top: 0, 
+    left: 0, 
+    borderRadius: 50,
   },
 });
