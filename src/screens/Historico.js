@@ -3,11 +3,11 @@ import { StyleSheet, Text, View, Button, FlatList, ActivityIndicator } from 'rea
 import { fetchCheckins } from '../services/checkinService';
 // Mapear os emojis com base no nível de humor
 const humorEmojis = {
-  "1": "😡", // Muito Ruim
-  "2": "😔", // Ruim
-  "3": "😐", // Regular
-  "4": "🙂", // Bom
-  "5": "😁", // Excelente
+  "1": "😁", //  
+  "2": "🙂", // 
+  "3": "😐", // 
+  "4": "😔", // 
+  "5": "😡", // 
 };
 
 // Função para formatar a data no formato dd/MM/yyyy
