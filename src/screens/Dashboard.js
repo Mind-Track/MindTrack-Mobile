@@ -41,10 +41,10 @@ export default function Dashboard({ navigation }) {
 
     // Dados do check-in
     const checkInData = {
-      idFuncionario: 1, 
-      nivelHumor: selectedButton + 1, 
+      idFuncionario: 1,
+      nivelHumor: selectedButton + 1,
       comentario: comment,
-      dataHora: new Date().toISOString(), 
+      dataHora: new Date().toISOString(),
     };
 
     try {
@@ -108,15 +108,6 @@ export default function Dashboard({ navigation }) {
         </Text>
       </View>
 
-      <View style={styles.container}>
-          <View style={styles.buttonContainer}>
-            <Button
-              title="Histórico"
-              onPress={() => navigation.navigate('Histórico')}
-            />
-          </View>
-          </View>
-      
     </ScrollView>
   );
 }
@@ -213,11 +204,11 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   image: {
-    width: 50,  
-    height: 50, 
-    position: 'absolute', 
-    top: 0, 
-    left: 0, 
+    width: 50,
+    height: 50,
+    position: 'absolute',
+    top: 0,
+    left: 0,
     borderRadius: 50,
   },
 });

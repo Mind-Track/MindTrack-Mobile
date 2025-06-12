@@ -25,13 +25,13 @@ export default function Historico({ navigation }) {
   const [error, setError] = useState(null); // Estado para lidar com erros
 
   useEffect(() => {
-    const carregaCheckins = async () =>{
-      try{
+    const carregaCheckins = async () => {
+      try {
         const data = await fetchCheckins();
         setCheckins(data);
-      }catch (error){
+      } catch (error) {
         setError("Erro ao carregar dados da API");
-      }finally{
+      } finally {
         setLoading(false);
       }
     };
@@ -43,10 +43,10 @@ export default function Historico({ navigation }) {
     <View style={styles.itemContainer}>
       {/* Data formatada */}
       <Text style={styles.dateText}>{formatarData(item.checkInData)}</Text>
-      
+
       {/* Comentário */}
       <Text style={styles.commentText}>{item.comentario}</Text>
-      
+
       {/* Emoji correspondente ao nível de humor */}
       <Text style={styles.emoji}>{humorEmojis[item.nivelHumor]}</Text>
     </View>
@@ -74,14 +74,6 @@ export default function Historico({ navigation }) {
         />
       )}
 
-      {/* Botão para navegar até o Dashboard */}
-      <View style={styles.buttonContainer}>
-        <Button
-          title="Dashboard"
-          onPress={() => navigation.navigate("Dashboard")}
-          color="#3E2F5B"
-        />
-      </View>
     </View>
   );
 }
@@ -115,7 +107,7 @@ const styles = StyleSheet.create({
     color: "#FFF",
     padding: 10
   },
-  commentText:{
+  commentText: {
     fontSize: 18,
     fontWeight: 200,
     color: "#FFF",
