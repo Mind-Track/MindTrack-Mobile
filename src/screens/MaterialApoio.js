@@ -1,167 +1,229 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-  Modal,
-  Linking,
-  Pressable,
+import React, { useState, useEffect } from 'react';
+import { 
+    StyleSheet, 
+    Text, 
+    View, 
+    FlatList, 
+    TouchableOpacity, 
+    Modal,
+    ScrollView,
+    ActivityIndicator,
+    Alert,
+    Linking
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 
-const dicasDeSaude = [
-  {
-    id: '1',
-    title: 'Importância da Hidratação',
-    content: 'Beber água regularmente ajuda na digestão, circulação e regulação da temperatura.',
-    links: ['https://example.com/hidratacao'],
-    fileName: 'hidratacao.pdf',
-  },
-  {
-    id: '2',
-    title: 'Alimentação Saudável',
-    content: 'Evite alimentos ultraprocessados e prefira frutas, legumes e grãos integrais.',
-    links: ['https://example.com/alimentacao'],
-    fileName: 'alimentacao.pdf',
-  },
-  {
-    id: '3',
-    title: 'Atividade Física Regular',
-    content: 'Exercícios ajudam a controlar o peso, melhorar o humor e prevenir doenças.',
-    links: [],
-    fileName: null,
-  },
-];
+import { listarMateriais, downloadArquivo } from '../services/materiaisService';
 
-export default function MaterialApoio() {
-  const [dicaSelecionada, setDicaSelecionada] = useState(null);
+export default function MaterialApoioScreen() {
+    const [dicas, setDicas] = useState([]);
+    const [dicaSelecionada, setDicaSelecionada] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [downloading, setDownloading] = useState(false);
 
-  const abrirLink = (url) => {
-    Linking.openURL(url);
-  };
+    useEffect(() => {
+        const carregarDados = async () => {
+            try {
+                const dados = await listarMateriais();
+                setDicas(dados);
+            } catch (error) {
+                Alert.alert("Erro", "Não foi possível carregar os materiais de apoio.");
+            } finally {
+                setLoading(false);
+            }
+        };
+        carregarDados();
+    }, []);
 
-  const downloadPDF = (fileName) => {
-    alert(`Simulação de download do arquivo: ${fileName}`);
-  };
+    // Função para abrir links externos
+    const handleOpenLink = async (url) => {
+        const supported = await Linking.canOpenURL(url);
+        if (supported) {
+            await Linking.openURL(url);
+        } else {
+            Alert.alert(`Não é possível abrir esta URL: ${url}`);
+        }
+    };
 
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Material de Apoio</Text>
+    // Função para baixar e abrir o PDF
+    const handleDownloadPdf = async (fileName) => {
+        if (downloading) return;
+        setDownloading(true);
+        try {
+            const fileUri = `${FileSystem.documentDirectory}${fileName}`;
+            const fileInfo = await FileSystem.getInfoAsync(fileUri);
 
-      <FlatList
-        data={dicasDeSaude}
-        numColumns={1}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.cardContainer}
-        renderItem={({ item }) => (
-          <TouchableOpacity style={styles.card} onPress={() => setDicaSelecionada(item)}>
+            if (!fileInfo.exists) {
+                console.log("Arquivo não existe localmente. Baixando...");
+                const blob = await downloadArquivo(fileName);
+                const reader = new FileReader();
+                reader.readAsDataURL(blob);
+                reader.onloadend = async () => {
+                    const base64data = reader.result.split(',')[1];
+                    await FileSystem.writeAsStringAsync(fileUri, base64data, {
+                        encoding: FileSystem.EncodingType.Base64,
+                    });
+                    console.log("Download completo. Compartilhando...");
+                    await Sharing.shareAsync(fileUri);
+                };
+            } else {
+                console.log("Arquivo já existe. Compartilhando...");
+                await Sharing.shareAsync(fileUri);
+            }
+        } catch (error) {
+            Alert.alert("Erro de Download", "Não foi possível baixar ou abrir o arquivo.");
+        } finally {
+            setDownloading(false);
+        }
+    };
+
+
+    const renderDicaCard = ({ item }) => (
+        <TouchableOpacity style={styles.card} onPress={() => setDicaSelecionada(item)}>
             <Text style={styles.cardTitle}>{item.title}</Text>
-            <Text style={styles.cardContent}>{item.content.slice(0, 100)}...</Text>
-          </TouchableOpacity>
-        )}
-      />
+            <Text style={styles.cardSnippet}>{item.content.substring(0, 100)}...</Text>
+        </TouchableOpacity>
+    );
 
-      <Modal visible={!!dicaSelecionada} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Pressable style={styles.close} onPress={() => setDicaSelecionada(null)}>
-              <Text style={{ fontSize: 24, color: 'white' }}>×</Text>
-            </Pressable>
-            {dicaSelecionada && (
-              <>
-                <Text style={styles.modalTitle}>{dicaSelecionada.title}</Text>
-                <Text style={styles.modalText}>{dicaSelecionada.content}</Text>
+    if (loading) {
+        return <View style={styles.centered}><ActivityIndicator size="large" color="#366AEE" /></View>;
+    }
 
-                {dicaSelecionada.links?.map((link, index) => (
-                  <TouchableOpacity key={index} onPress={() => abrirLink(link)}>
-                    <Text style={styles.link}>🔗 Acesse mais informações</Text>
-                  </TouchableOpacity>
-                ))}
+    return (
+        <View style={styles.container}>
+            <FlatList
+                data={dicas}
+                renderItem={renderDicaCard}
+                keyExtractor={(item) => item.id.toString()}
+                numColumns={2} // Cria a grade com 2 colunas
+                contentContainerStyle={styles.listContainer}
+            />
 
-                {dicaSelecionada.fileName && (
-                  <TouchableOpacity onPress={() => downloadPDF(dicaSelecionada.fileName)}>
-                    <Text style={styles.link}>📄 Baixar PDF</Text>
-                  </TouchableOpacity>
-                )}
-              </>
-            )}
-          </View>
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={!!dicaSelecionada}
+                onRequestClose={() => setDicaSelecionada(null)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <TouchableOpacity style={styles.closeButton} onPress={() => setDicaSelecionada(null)}>
+                            <Ionicons name="close-circle" size={30} color="#fff" />
+                        </TouchableOpacity>
+
+                        <Text style={styles.modalTitle}>{dicaSelecionada?.title}</Text>
+                        <ScrollView style={styles.modalScrollView}>
+                            <Text style={styles.modalText}>{dicaSelecionada?.content}</Text>
+                        </ScrollView>
+
+                        {/* Links e PDF */}
+                        {dicaSelecionada?.links?.map((link, index) => (
+                            <TouchableOpacity key={index} style={styles.linkButton} onPress={() => handleOpenLink(link)}>
+                                <Ionicons name="link" size={20} color="#89CFF0" />
+                                <Text style={styles.linkButtonText}>Acessar mais informações</Text>
+                            </TouchableOpacity>
+                        ))}
+
+                        {dicaSelecionada?.fileName && (
+                            <TouchableOpacity style={styles.linkButton} onPress={() => handleDownloadPdf(dicaSelecionada.fileName)} disabled={downloading}>
+                                {downloading ? (
+                                    <ActivityIndicator color="#89CFF0" />
+                                ) : (
+                                    <>
+                                        <Ionicons name="document-attach" size={20} color="#89CFF0" />
+                                        <Text style={styles.linkButtonText}>Baixar PDF</Text>
+                                    </>
+                                )}
+                            </TouchableOpacity>
+                        )}
+                    </View>
+                </View>
+            </Modal>
         </View>
-      </Modal>
-    </View>
-  );
+    );
 }
 
+
+// ESTILOS
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: '#89CFF0',
-    flex: 1,
-    paddingTop: 30,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    backgroundColor: '#366AEE',
-    color: 'white',
-    textAlign: 'center',
-    padding: 15,
-    marginHorizontal: 20,
-    borderRadius: 15,
-    marginBottom: 20,
-  },
-  cardContainer: {
-    paddingHorizontal: 20,
-  },
-  card: {
-    backgroundColor: '#366AEE',
-    borderRadius: 15,
-    padding: 25,
-    marginBottom: 20,
-    elevation: 3,
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: 'white',
-    marginBottom: 10,
-  },
-  cardContent: {
-    color: 'white',
-    fontSize: 14,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-  },
-  modalContent: {
-    backgroundColor: '#162B61',
-    borderRadius: 10,
-    padding: 20,
-    alignItems: 'center',
-  },
-  close: {
-    position: 'absolute',
-    top: 10,
-    right: 15,
-  },
-  modalTitle: {
-    fontSize: 20,
-    color: 'white',
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  modalText: {
-    color: 'white',
-    fontSize: 16,
-    marginBottom: 15,
-    textAlign: 'center',
-  },
-  link: {
-    color: '#89CFF0',
-    fontWeight: 'bold',
-    marginTop: 10,
-  },
+    centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#89CFF0' },
+    container: { flex: 1, backgroundColor: '#89CFF0' },
+    listContainer: { padding: 10 },
+    card: {
+        flex: 1,
+        margin: 10,
+        backgroundColor: '#366AEE',
+        borderRadius: 15,
+        padding: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+        elevation: 5,
+        shadowColor: '#000',
+        shadowOpacity: 0.2,
+        shadowOffset: { width: 0, height: 2 },
+        shadowRadius: 4,
+        minHeight: 180,
+    },
+    cardTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: 'white',
+        textAlign: 'center',
+        marginBottom: 10,
+    },
+    cardSnippet: {
+        fontSize: 14,
+        color: 'white',
+        textAlign: 'center',
+    },
+    // Estilos do Modal
+    modalOverlay: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    },
+    modalContent: {
+        width: '90%',
+        maxHeight: '80%',
+        backgroundColor: '#162B61',
+        borderRadius: 20,
+        padding: 20,
+        paddingTop: 40,
+    },
+    closeButton: {
+        position: 'absolute',
+        top: 10,
+        right: 10,
+    },
+    modalTitle: {
+        fontSize: 22,
+        fontWeight: 'bold',
+        color: 'white',
+        textAlign: 'center',
+        marginBottom: 15,
+    },
+    modalScrollView: {
+        maxHeight: '50%',
+        marginBottom: 20,
+    },
+    modalText: {
+        fontSize: 16,
+        color: 'white',
+    },
+    linkButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#366AEE',
+        padding: 15,
+        borderRadius: 10,
+        marginTop: 10,
+    },
+    linkButtonText: {
+        color: 'white',
+        fontWeight: 'bold',
+        marginLeft: 10,
+    },
 });

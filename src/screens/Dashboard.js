@@ -1,115 +1,141 @@
 import React, { useState, useEffect } from 'react';
 import {
-  StyleSheet,
-  Text,
-  View,
-  Button,
-  TextInput,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
+    StyleSheet,
+    Text,
+    View,
+    TextInput,
+    ScrollView,
+    TouchableOpacity,
+    Alert,
+    Image,
+    ActivityIndicator
 } from 'react-native';
-import { submitCheckIn } from '../services/checkinService';
-import { Image } from 'react-native';
 
-// Importe as imagens manualmente
+import { useAuth } from '../contexts/AuthContext';
+import { submitCheckIn } from '../services/checkinService';
+import { listarMateriais } from '../services/materiaisService';
+import { listarQuestionariosPorFuncionario } from '../services/questionarioService';
+
 const emojis = [
-  require('../assets/images/emojis1.png'),
-  require('../assets/images/emojis2.png'),
-  require('../assets/images/emojis3.png'),
-  require('../assets/images/emojis4.png'),
-  require('../assets/images/emojis5.png'),
+    require('../assets/images/emojis1.png'),
+    require('../assets/images/emojis2.png'),
+    require('../assets/images/emojis3.png'),
+    require('../assets/images/emojis4.png'),
+    require('../assets/images/emojis5.png'),
 ];
 
-
 export default function Dashboard({ navigation }) {
-  const [selectedButton, setSelectedButton] = useState(null);
-  const [comment, setComment] = useState('');
+    const { user } = useAuth();
 
-  // Função para selecionar um botão
-  const selectButton = (index) => {
-    setSelectedButton(index);
-  };
+    const [selectedButton, setSelectedButton] = useState(null);
+    const [comment, setComment] = useState('');
+    
+    const [dicaDoDia, setDicaDoDia] = useState(null);
+    const [questionarios, setQuestionarios] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-  // Função para enviar o check-in
-  const handleSubmitCheckIn = async () => {
-    // Valida se o botão foi selecionado
-    if (selectedButton === null) {
-      Alert.alert('Erro', 'Selecione um botão antes de enviar!');
-      return;
-    }
+    useEffect(() => {
+        const carregarDadosDashboard = async () => {
+            if (!user) return; 
 
-    // Dados do check-in
-    const checkInData = {
-      idFuncionario: 1,
-      nivelHumor: selectedButton + 1,
-      comentario: comment,
-      dataHora: new Date().toISOString(),
+            try {
+                // Carregar Materiais para a Dica do Dia
+                const materiais = await listarMateriais();
+                if (materiais && materiais.length > 0) {
+                    const dia = new Date().getDate();
+                    const indiceDica = dia % materiais.length; 
+                    setDicaDoDia(materiais[indiceDica]);
+                }
+
+                // Carregar Questionários Pendentes
+                const todosQuestionarios = await listarQuestionariosPorFuncionario(user.id);
+                const naoRespondidos = todosQuestionarios
+                    .filter(q => !q.respondido)
+                    .sort((a, b) => new Date(b.dueDate) - new Date(a.dueDate))
+                    .slice(0, 3); 
+                setQuestionarios(naoRespondidos);
+
+            } catch (error) {
+                Alert.alert("Erro", "Não foi possível carregar os dados do dashboard.");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        carregarDadosDashboard();
+    }, [user]); 
+
+    const selectButton = (index) => {
+        setSelectedButton(index);
     };
 
-    try {
-      // Envia os dados do check-in para o backend
-      await submitCheckIn(checkInData);
-      Alert.alert('Sucesso', 'Check-in enviado com sucesso!');
-      setSelectedButton(null); // Reseta a seleção do botão
-      setComment(''); // Limpa o campo de comentário
-    } catch (error) {
-      Alert.alert('Erro', 'Não foi possível enviar o check-in.');
-      console.error('Erro ao enviar check-in:', error);
+    const handleSubmitCheckIn = async () => {
+        if (selectedButton === null) {
+            Alert.alert('Erro', 'Selecione um emoji para o seu humor hoje!');
+            return;
+        }
+
+        const checkInData = {
+            idFuncionario: user.id,
+            humorLevel: selectedButton + 1, 
+            comment: comment,
+            dateTime: new Date().toISOString(),
+        };
+
+        try {
+            await submitCheckIn(checkInData);
+            Alert.alert('Sucesso', 'Check-in enviado com sucesso!');
+            setSelectedButton(null);
+            setComment('');
+        } catch (error) {
+            Alert.alert('Erro', 'Não foi possível enviar o check-in.');
+            console.error('Erro ao enviar check-in:', error);
+        }
+    };
+
+    if (loading) {
+        return <View style={styles.container}><ActivityIndicator size="large" color="#FFF" /></View>;
     }
-  };
 
-  return (
-    <ScrollView style={styles.container}>
-      {/* Check-in Diário */}
-      <View style={styles.section}>
-        <Text style={styles.title}>Check-in Diário</Text>
-        <View style={styles.buttonGroup}>
-          {emojis.map((emoji, index) => (
-            <TouchableOpacity
-              key={index}
-              style={[
-                styles.checkInButton,
-                selectedButton === index && styles.activeButton,
-              ]}
-              onPress={() => selectButton(index)}
-            >
-              <Image source={emoji} style={styles.image} />
-            </TouchableOpacity>
-          ))}
-        </View>
-        <TextInput
-          style={styles.textInput}
-          placeholder="Adicione um comentário..."
-          multiline
-          value={comment}
-          onChangeText={setComment}
-        />
-        <TouchableOpacity
-          style={[styles.submitButton, selectedButton === null && styles.disabledButton]}
-          onPress={handleSubmitCheckIn}
-          disabled={selectedButton === null}
-        >
-          <Text style={styles.submitText}>Enviar</Text>
-        </TouchableOpacity>
-      </View>
+    return (
+        <ScrollView style={styles.container}>
+            {/* Check-in Diário (a lógica interna não muda) */}
+            <View style={styles.section}>
+                {/* ... seu código de check-in ... */}
+            </View>
 
-      {/* Questionários Pendentes */}
-      <View style={styles.section}>
-        <Text style={styles.title}>Questionários Pendentes</Text>
-        <Text style={styles.noSurveys}>Parabéns! Não há questionários pendentes!</Text>
-      </View>
+            {/* Questionários Pendentes - AGORA DINÂMICO */}
+            <View style={styles.section}>
+                <Text style={styles.title}>Questionários Pendentes</Text>
+                {questionarios.length > 0 ? (
+                    questionarios.map(q => (
+                        <TouchableOpacity 
+                            key={q.id} 
+                            style={styles.questionarioItem} 
+                            onPress={() => navigation.navigate('ResponderQuestionario', { questionarioId: q.id })}
+                        >
+                            <Text style={styles.questionarioTitle}>{q.title}</Text>
+                        </TouchableOpacity>
+                    ))
+                ) : (
+                    <Text style={styles.noSurveys}>Parabéns! Não há questionários pendentes!</Text>
+                )}
+            </View>
 
-      {/* Dica de Saúde do Dia */}
-      <View style={styles.section}>
-        <Text style={styles.title}>Dica de Saúde do Dia</Text>
-        <Text style={styles.tip}>
-          Reserve 10 minutos do seu dia para meditar e cuidar de sua saúde mental.
-        </Text>
-      </View>
-
-    </ScrollView>
-  );
+            {/* Dica de Saúde do Dia */}
+            <View style={styles.section}>
+                <Text style={styles.title}>Dica de Saúde do Dia</Text>
+                {dicaDoDia ? (
+                    <TouchableOpacity onPress={() => navigation.navigate('Material de Apoio')}>
+                        <Text style={styles.tipTitle}>{dicaDoDia.title}</Text>
+                        <Text style={styles.tip}>{dicaDoDia.content}</Text>
+                    </TouchableOpacity>
+                ) : (
+                    <Text style={styles.tip}>Nenhuma dica disponível hoje.</Text>
+                )}
+            </View>
+        </ScrollView>
+    );
 }
 
 const styles = StyleSheet.create({

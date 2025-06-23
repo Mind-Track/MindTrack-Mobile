@@ -1,209 +1,237 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Alert, StyleSheet, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect, useMemo } from 'react';
+import {
+    StyleSheet,
+    Text,
+    View,
+    ScrollView,
+    TouchableOpacity,
+    ActivityIndicator,
+    Alert,
+    TextInput
+} from 'react-native';
+import { useAuth } from '../contexts/AuthContext';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { format } from 'date-fns';
-
-// Simulação de serviço
 import { buscarQuestionarioPorId, enviarRespostas } from '../services/questionarioService';
+import { Ionicons } from '@expo/vector-icons';
 
-export default function ResponderQuestionario() {
-  const route = useRoute();
-  const navigation = useNavigation();
+// --- Sub-componentes para cada tipo de pergunta ---
 
-  // Extrai id com segurança (evita erro se params for undefined)
-  const id = route.params?.id;
-
-  const [questionario, setQuestionario] = useState(null);
-  const [respostas, setRespostas] = useState({});
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!id) {
-      Alert.alert('Erro', 'ID do questionário não informado');
-      navigation.goBack();
-      return;
-    }
-
-    buscarQuestionarioPorId(id)
-      .then(data => {
-        const perguntas = data.description.split(';').map((texto, index) => ({
-          id: index + 1,
-          texto: texto.trim()
-        }));
-
-        setQuestionario({ ...data, perguntas });
-
-        // Inicializa respostas com zero (não respondido)
-        const respostasIniciais = {};
-        perguntas.forEach(p => {
-          respostasIniciais[p.id] = 0;
-        });
-        setRespostas(respostasIniciais);
-
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error(err);
-        Alert.alert('Erro', 'Erro ao carregar questionário');
-        navigation.goBack();
-      });
-  }, [id]);
-
-  const selecionarResposta = (perguntaId, valor) => {
-    setRespostas(prev => ({ ...prev, [perguntaId]: valor }));
-  };
-
-  const formInvalido = () => {
-    return Object.values(respostas).some(val => val === 0);
-  };
-
-  const handleEnviar = async () => {
-    if (!questionario) return;
-
-    const respostasFormatadas = Object.entries(respostas).map(([perguntaId, resposta]) => ({
-      perguntaId: Number(perguntaId),
-      resposta
-    }));
-
-    try {
-      // Aqui o funcId está fixo (9), ajustar conforme sua autenticação
-      await enviarRespostas(questionario.id, 9, respostasFormatadas);
-      Alert.alert('Sucesso', 'Respostas enviadas com sucesso');
-      navigation.goBack();
-    } catch (err) {
-      console.error(err);
-      Alert.alert('Erro', 'Erro ao enviar respostas');
-    }
-  };
-
-  if (loading) {
-    return <ActivityIndicator size="large" color="#366AEE" style={{ marginTop: 100 }} />;
-  }
-
-  if (!questionario) {
+// Componente para LIKERT e SIM/NÃO
+const OpcaoUnica = ({ pergunta, respostas, onSelect }) => {
+    const respostaAtual = respostas.find(r => r.perguntaId === pergunta.id);
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <Text>Questionário não encontrado.</Text>
-      </View>
-    );
-  }
-
-  return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.titleSection}>
-        <Text style={styles.title}>{questionario.title}</Text>
-      </View>
-
-      <Text style={styles.prazo}>Prazo: {format(new Date(questionario.dueDate), 'dd/MM/yyyy')}</Text>
-
-      {questionario.perguntas.map((pergunta, i) => (
-        <View key={pergunta.id} style={styles.perguntaBox}>
-          <Text style={styles.pergunta}>{i + 1}. {pergunta.texto}</Text>
-          <View style={styles.opcoes}>
-            {[1, 2, 3, 4, 5].map(val => (
-              <TouchableOpacity
-                key={val}
-                style={[
-                  styles.opcao,
-                  respostas[pergunta.id] === val && styles.selecionado
-                ]}
-                onPress={() => selecionarResposta(pergunta.id, val)}
-              >
-                <Text style={[
-                  styles.opcaoTexto,
-                  respostas[pergunta.id] === val && styles.selecionadoTexto
-                ]}>
-                  {val}
-                </Text>
-              </TouchableOpacity>
+        <View style={styles.opcoesContainer}>
+            {pergunta.opcoes.map(opcao => (
+                <TouchableOpacity
+                    key={opcao.id}
+                    style={[styles.opcaoBotao, respostaAtual?.opcaoId === opcao.id && styles.opcaoSelecionada]}
+                    onPress={() => onSelect(pergunta.id, opcao.id)}
+                >
+                    <Text style={[styles.opcaoTexto, respostaAtual?.opcaoId === opcao.id && styles.opcaoTextoSelecionado]}>
+                        {opcao.textoOpcao}
+                    </Text>
+                </TouchableOpacity>
             ))}
-          </View>
         </View>
-      ))}
+    );
+};
 
-      <TouchableOpacity
-        style={[styles.botaoEnviar, formInvalido() && styles.botaoDesabilitado]}
-        onPress={handleEnviar}
-        disabled={formInvalido()}
-      >
-        <Text style={styles.botaoTexto}>Enviar Respostas</Text>
-      </TouchableOpacity>
-    </ScrollView>
-  );
+// Componente para MULTIPLA_ESCOLHA
+const OpcaoMultipla = ({ pergunta, respostas, onSelect }) => {
+    const respostasAtuais = respostas.filter(r => r.perguntaId === pergunta.id).map(r => r.opcaoId);
+    return (
+        <View>
+            {pergunta.opcoes.map(opcao => {
+                const isSelected = respostasAtuais.includes(opcao.id);
+                return (
+                    <TouchableOpacity
+                        key={opcao.id}
+                        style={styles.checkboxContainer}
+                        onPress={() => onSelect(pergunta.id, opcao.id)}
+                    >
+                        <Ionicons name={isSelected ? 'checkbox' : 'square-outline'} size={24} color="#fff" />
+                        <Text style={styles.checkboxLabel}>{opcao.textoOpcao}</Text>
+                    </TouchableOpacity>
+                );
+            })}
+        </View>
+    );
+};
+
+// Componente para ABERTA
+const OpcaoAberta = ({ pergunta, respostas, onUpdate }) => {
+    const respostaAtual = respostas.find(r => r.perguntaId === pergunta.id)?.texto || '';
+    return (
+        <View>
+            <TextInput
+                style={styles.respostaAberta}
+                multiline
+                placeholder="Digite sua resposta aqui..."
+                placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                value={respostaAtual}
+                onChangeText={(text) => onUpdate(pergunta.id, text)}
+                maxLength={120}
+            />
+            <Text style={styles.contadorCaracteres}>{respostaAtual.length} / 120</Text>
+        </View>
+    );
+};
+
+
+// --- Componente Principal da Tela ---
+export default function ResponderQuestionarioScreen() {
+    const { user } = useAuth();
+    const navigation = useNavigation();
+    const route = useRoute();
+
+    const [questionario, setQuestionario] = useState(null);
+    const [respostas, setRespostas] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    // Carrega o questionário quando a tela é montada
+    useEffect(() => {
+        const questionarioId = route.params?.questionarioId;
+        if (questionarioId) {
+            const carregarDados = async () => {
+                try {
+                    const data = await buscarQuestionarioPorId(questionarioId);
+                    setQuestionario(data);
+                    // Inicializa o array de respostas
+                    const respostasIniciais = data.questions
+                        .filter(p => p.tipo !== 'MULTIPLA_ESCOLHA')
+                        .map(p => ({ perguntaId: p.id, opcaoId: null, texto: null }));
+                    setRespostas(respostasIniciais);
+                } catch (error) {
+                    Alert.alert("Erro", "Não foi possível carregar o questionário.", [{ text: "OK", onPress: () => navigation.goBack() }]);
+                } finally {
+                    setLoading(false);
+                }
+            };
+            carregarDados();
+        }
+    }, [route.params?.questionarioId]);
+
+    // --- Funções para manipular o estado das respostas ---
+
+    const selecionarOpcaoUnica = (perguntaId, opcaoId) => {
+        setRespostas(prev => {
+            const outrasRespostas = prev.filter(r => r.perguntaId !== perguntaId);
+            return [...outrasRespostas, { perguntaId, opcaoId, texto: null }];
+        });
+    };
+
+    const selecionarOpcaoMultipla = (perguntaId, opcaoId) => {
+        setRespostas(prev => {
+            const jaExiste = prev.find(r => r.perguntaId === perguntaId && r.opcaoId === opcaoId);
+            if (jaExiste) {
+                return prev.filter(r => r.opcaoId !== opcaoId || r.perguntaId !== perguntaId);
+            } else {
+                return [...prev, { perguntaId, opcaoId, texto: null }];
+            }
+        });
+    };
+
+    const atualizarRespostaAberta = (perguntaId, texto) => {
+        setRespostas(prev => {
+            const outrasRespostas = prev.filter(r => r.perguntaId !== perguntaId);
+            return [...outrasRespostas, { perguntaId, opcaoId: null, texto }];
+        });
+    };
+
+    // Renderiza o tipo de pergunta correto
+    const renderPergunta = (pergunta) => {
+        switch (pergunta.tipo) {
+            case 'LIKERT':
+            case 'SIM/NÃO':
+                return <OpcaoUnica pergunta={pergunta} respostas={respostas} onSelect={selecionarOpcaoUnica} />;
+            case 'MULTIPLA_ESCOLHA':
+                return <OpcaoMultipla pergunta={pergunta} respostas={respostas} onSelect={selecionarOpcaoMultipla} />;
+            case 'ABERTA':
+                return <OpcaoAberta pergunta={pergunta} respostas={respostas} onUpdate={atualizarRespostaAberta} />;
+            default:
+                return <Text style={{color: 'red'}}>Tipo de pergunta não suportado: {pergunta.tipo}</Text>;
+        }
+    };
+    
+    // Valida se o formulário foi completamente preenchido
+    const isFormInvalido = useMemo(() => {
+        if (!questionario || !questionario.questions) return true;
+        const totalPerguntas = questionario.questions.length;
+        const perguntasRespondidas = new Set(respostas.filter(r => r.opcaoId !== null || (r.texto && r.texto.trim() !== '')).map(r => r.perguntaId));
+        return perguntasRespondidas.size < totalPerguntas;
+    }, [questionario, respostas]);
+
+    // Envia as respostas para o backend
+    const handleEnviarRespostas = async () => {
+        if (isFormInvalido) {
+            Alert.alert("Atenção", "Por favor, responda todas as perguntas antes de enviar.");
+            return;
+        }
+        setLoading(true);
+        try {
+            await enviarRespostas(questionario.id, user.id, respostas);
+            Alert.alert("Sucesso!", "Questionário enviado com sucesso.", [{ text: "OK", onPress: () => navigation.goBack() }]);
+        } catch (error) {
+            Alert.alert("Erro", "Houve um problema ao enviar suas respostas.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+
+    if (loading || !questionario) {
+        return <View style={styles.centered}><ActivityIndicator size="large" color="#366AEE" /></View>;
+    }
+
+    return (
+        <ScrollView style={styles.container}>
+            <View style={styles.header}>
+                <Text style={styles.title}>{questionario.title}</Text>
+                <Text style={styles.description}>{questionario.description}</Text>
+            </View>
+
+            {questionario.questions.map((pergunta, index) => (
+                <View key={pergunta.id} style={styles.perguntaBox}>
+                    <Text style={styles.perguntaTexto}>{index + 1}. {pergunta.text}</Text>
+                    {renderPergunta(pergunta)}
+                </View>
+            ))}
+
+            <TouchableOpacity 
+                style={[styles.btnEnviar, isFormInvalido && styles.btnDesabilitado]} 
+                onPress={handleEnviarRespostas}
+                disabled={isFormInvalido}
+            >
+                <Text style={styles.btnEnviarTexto}>Enviar Respostas</Text>
+            </TouchableOpacity>
+        </ScrollView>
+    );
 }
 
 
+// --- Estilos ---
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: '#89CFF0',
-    padding: 20,
-    minHeight: '100%',
-  },
-  titleSection: {
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  title: {
-    backgroundColor: '#366AEE',
-    color: 'white',
-    padding: 15,
-    borderRadius: 15,
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  prazo: {
-    fontSize: 16,
-    marginBottom: 20,
-    color: '#162B61',
-    fontWeight: 'bold',
-  },
-  perguntaBox: {
-    marginBottom: 25,
-  },
-  pergunta: {
-    fontSize: 17,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    color: '#162B61',
-  },
-  opcoes: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 15,
-  },
-  opcao: {
-    width: 50,
-    height: 50,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: '#fff',
-    backgroundColor: 'transparent',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  opcaoTexto: {
-    fontSize: 18,
-    color: '#fff',
-  },
-  selecionado: {
-    backgroundColor: '#fff',
-  },
-  selecionadoTexto: {
-    color: '#366AEE',
-  },
-  botaoEnviar: {
-    backgroundColor: '#366AEE',
-    padding: 15,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginTop: 30,
-  },
-  botaoDesabilitado: {
-    backgroundColor: '#7a9ae0',
-  },
-  botaoTexto: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
+    container: { flex: 1, backgroundColor: '#89CFF0' },
+    centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#89CFF0' },
+    header: { padding: 20, backgroundColor: '#162B61', borderBottomLeftRadius: 20, borderBottomRightRadius: 20, marginBottom: 10 },
+    title: { fontSize: 24, fontWeight: 'bold', color: '#fff', textAlign: 'center', marginBottom: 10 },
+    description: { fontSize: 16, color: '#ddd', textAlign: 'center' },
+    perguntaBox: { backgroundColor: '#366AEE', margin: 20, padding: 20, borderRadius: 15 },
+    perguntaTexto: { fontSize: 18, fontWeight: 'bold', color: '#fff', marginBottom: 20 },
+    // Estilos para OpcaoUnica (Likert, Sim/Não)
+    opcoesContainer: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 10 },
+    opcaoBotao: { borderWidth: 2, borderColor: '#fff', backgroundColor: 'transparent', borderRadius: 10, paddingVertical: 10, paddingHorizontal: 15, minWidth: 80, alignItems: 'center' },
+    opcaoSelecionada: { backgroundColor: '#fff' },
+    opcaoTexto: { color: '#fff', fontWeight: 'bold' },
+    opcaoTextoSelecionado: { color: '#366AEE' },
+    // Estilos para OpcaoMultipla (Checkbox)
+    checkboxContainer: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8 },
+    checkboxLabel: { color: '#fff', fontSize: 16, marginLeft: 10 },
+    // Estilos para OpcaoAberta (Textarea)
+    respostaAberta: { backgroundColor: 'rgba(0,0,0,0.2)', color: '#fff', padding: 10, borderRadius: 5, minHeight: 80, textAlignVertical: 'top' },
+    contadorCaracteres: { color: '#eee', textAlign: 'right', fontSize: 12, marginTop: 4 },
+    // Botão de Envio
+    btnEnviar: { backgroundColor: '#162B61', padding: 15, margin: 20, borderRadius: 15, alignItems: 'center' },
+    btnDesabilitado: { backgroundColor: '#A0A0A0' },
+    btnEnviarTexto: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
 });

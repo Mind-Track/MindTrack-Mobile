@@ -1,103 +1,144 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import React, { useState, useEffect } from 'react';
+import {
+    StyleSheet,
+    Text,
+    View,
+    FlatList,
+    TouchableOpacity,
+    ActivityIndicator,
+    Alert
+} from 'react-native';
+import { useAuth } from '../contexts/AuthContext';
+import { useNavigation, useIsFocused } from '@react-navigation/native';
+import { listarQuestionariosPorFuncionario } from '../services/questionarioService';
 
-const questionariosMock = [
-  { id: 1, title: 'Saúde Mental', dueDate: '2025-06-20', respondido: false },
-  { id: 2, title: 'Postura no Trabalho', dueDate: '2025-06-18', respondido: true },
-  { id: 3, title: 'Prevenção de Acidentes', dueDate: '2025-06-25', respondido: false },
-];
+const formatarData = (dataISO) => {
+    if (!dataISO) return 'Sem prazo';
+    const data = new Date(dataISO);
+    data.setDate(data.getDate() + 1);
+    const dia = String(data.getDate()).padStart(2, "0");
+    const mes = String(data.getMonth() + 1).padStart(2, "0");
+    const ano = data.getFullYear();
+    return `${dia}/${mes}/${ano}`;
+};
 
-export default function Questionarios() {
-  const [questionarios] = useState(questionariosMock);
-  const navigation = useNavigation();
+export default function QuestionariosScreen() {
+    const { user } = useAuth();
+    const navigation = useNavigation();
+    const isFocused = useIsFocused(); 
 
-  const responderQuestionario = (id) => {
-    navigation.navigate('ResponderQuestionario', { id });
-  };
+    const [questionarios, setQuestionarios] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Lista de Questionários</Text>
-      <ScrollView contentContainerStyle={styles.listContainer}>
-        {questionarios.length === 0 ? (
-          <Text style={styles.empty}>Nenhum questionário disponível no momento.</Text>
-        ) : (
-          questionarios.map((q) => (
-            <View
-              key={q.id}
-              style={[
-                styles.item,
-                !q.respondido && styles.naoRespondidoContainer
-              ]}
+    const carregarDados = async () => {
+        if (!user) return;
+        setLoading(true);
+        try {
+            const data = await listarQuestionariosPorFuncionario(user.id);
+            setQuestionarios(data);
+        } catch (error) {
+            Alert.alert("Erro", "Não foi possível carregar os questionários.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (isFocused) {
+            carregarDados();
+        }
+    }, [isFocused]); 
+
+    const renderItem = ({ item }) => {
+        const respondido = item.respondido;
+
+        return (
+            <TouchableOpacity
+                style={[
+                    styles.itemContainer,
+                    !respondido && styles.itemNaoRespondido 
+                ]}
+                disabled={respondido} 
+                onPress={() => navigation.navigate('ResponderQuestionario', { questionarioId: item.id })}
             >
-              <Text style={styles.tema}>Tema: {q.title}</Text>
-              <Text style={styles.prazo}>Prazo: {q.dueDate}</Text>
+                <Text style={styles.itemTitle}>Tema: {item.title}</Text>
+                <Text style={styles.itemDueDate}>Prazo: {formatarData(item.dueDate)}</Text>
+                
+                {respondido ? (
+                    <Text style={styles.statusTextRespondido}>Já respondido</Text>
+                ) : (
+                    <Text style={styles.statusTextResponder}>Clique aqui para responder</Text>
+                )}
+            </TouchableOpacity>
+        );
+    };
 
-              {q.respondido ? (
-                <Text style={styles.respondido}>Já respondido</Text>
-              ) : (
-                <Pressable onPress={() => responderQuestionario(q.id)}>
-                  <Text style={styles.link}>Clique aqui para responder</Text>
-                </Pressable>
-              )}
-            </View>
-          ))
-        )}
-      </ScrollView>
-    </View>
-  );
+    if (loading) {
+        return <View style={styles.centered}><ActivityIndicator size="large" color="#366AEE" /></View>;
+    }
+
+    return (
+        <View style={styles.container}>
+            <FlatList
+                data={questionarios}
+                renderItem={renderItem}
+                keyExtractor={(item) => item.id.toString()}
+                contentContainerStyle={styles.listContainer}
+                ListEmptyComponent={() => (
+                    <View style={styles.centered}>
+                        <Text style={styles.emptyText}>Nenhum questionário disponível no momento.</Text>
+                    </View>
+                )}
+            />
+        </View>
+    );
 }
 
+// Estilos
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: '#89CFF0',
-    flex: 1,
-    paddingTop: 30,
-    paddingHorizontal: 20,
-  },
-  title: {
-    backgroundColor: '#366AEE',
-    color: 'white',
-    padding: 15,
-    borderRadius: 15,
-    fontSize: 20,
-    textAlign: 'center',
-    marginBottom: 20,
-    fontWeight: 'bold',
-  },
-  listContainer: {
-    gap: 15,
-  },
-  item: {
-    backgroundColor: '#162B61',
-    padding: 15,
-    borderRadius: 10,
-    color: 'white',
-  },
-  naoRespondidoContainer: {
-    backgroundColor: '#366AEE',
-  },
-  tema: {
-    fontWeight: 'bold',
-    color: 'white',
-    marginBottom: 5,
-  },
-  prazo: {
-    color: 'white',
-    marginBottom: 10,
-  },
-  link: {
-    textDecorationLine: 'underline',
-    color: 'white',
-    fontWeight: 'bold',
-  },
-  respondido: {
-    color: 'gray',
-  },
-  empty: {
-    textAlign: 'center',
-    color: '#333',
-    marginTop: 50,
-  },
+    container: { flex: 1, backgroundColor: '#89CFF0' },
+    centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    listContainer: { padding: 20 },
+    itemContainer: {
+        backgroundColor: '#162B61', 
+        padding: 20,
+        borderRadius: 15,
+        marginBottom: 15,
+        elevation: 4,
+        shadowColor: '#000',
+        shadowOpacity: 0.2,
+        shadowOffset: { width: 0, height: 2 },
+        shadowRadius: 4,
+    },
+    itemNaoRespondido: {
+        backgroundColor: '#366AEE', 
+    },
+    itemTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#FFFFFF',
+        marginBottom: 8,
+    },
+    itemDueDate: {
+        fontSize: 15,
+        color: '#DDDDDD',
+        marginBottom: 15,
+    },
+    statusTextRespondido: {
+        fontSize: 16,
+        color: '#A0A0A0', 
+        fontWeight: 'bold',
+        alignSelf: 'flex-end',
+    },
+    statusTextResponder: {
+        fontSize: 16,
+        color: '#FFFFFF',
+        fontWeight: 'bold',
+        textDecorationLine: 'underline',
+        alignSelf: 'flex-end',
+    },
+    emptyText: {
+        fontSize: 18,
+        color: '#162B61',
+    },
 });
