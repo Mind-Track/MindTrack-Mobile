@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { 
-    StyleSheet, 
-    Text, 
-    View, 
-    FlatList, 
-    TouchableOpacity, 
+import {
+    StyleSheet,
+    Text,
+    View,
+    FlatList,
+    TouchableOpacity,
     Modal,
     ScrollView,
     ActivityIndicator,
@@ -37,19 +37,17 @@ export default function MaterialApoioScreen() {
         carregarDados();
     }, []);
 
-    // Função para abrir links externos
     const handleOpenLink = async (url) => {
         const supported = await Linking.canOpenURL(url);
         if (supported) {
             await Linking.openURL(url);
         } else {
-            Alert.alert(`Não é possível abrir esta URL: ${url}`);
+            Alert.alert('Erro', `Não é possível abrir esta URL: ${url}`);
         }
     };
 
-    // Função para baixar e abrir o PDF
     const handleDownloadPdf = async (fileName) => {
-        if (downloading) return;
+        if (downloading || !fileName) return;
         setDownloading(true);
         try {
             const fileUri = `${FileSystem.documentDirectory}${fileName}`;
@@ -58,14 +56,15 @@ export default function MaterialApoioScreen() {
             if (!fileInfo.exists) {
                 console.log("Arquivo não existe localmente. Baixando...");
                 const blob = await downloadArquivo(fileName);
+
                 const reader = new FileReader();
                 reader.readAsDataURL(blob);
+
                 reader.onloadend = async () => {
                     const base64data = reader.result.split(',')[1];
                     await FileSystem.writeAsStringAsync(fileUri, base64data, {
                         encoding: FileSystem.EncodingType.Base64,
                     });
-                    console.log("Download completo. Compartilhando...");
                     await Sharing.shareAsync(fileUri);
                 };
             } else {
@@ -79,11 +78,14 @@ export default function MaterialApoioScreen() {
         }
     };
 
-
     const renderDicaCard = ({ item }) => (
         <TouchableOpacity style={styles.card} onPress={() => setDicaSelecionada(item)}>
-            <Text style={styles.cardTitle}>{item.title}</Text>
-            <Text style={styles.cardSnippet}>{item.content.substring(0, 100)}...</Text>
+            <Text style={styles.cardTitle}>{item.titulo}</Text>
+            {item.conteudo && (
+                <Text style={styles.cardSnippet}>
+                    {item.conteudo.substring(0, 100)}...
+                </Text>
+            )}
         </TouchableOpacity>
     );
 
@@ -97,7 +99,6 @@ export default function MaterialApoioScreen() {
                 data={dicas}
                 renderItem={renderDicaCard}
                 keyExtractor={(item) => item.id.toString()}
-                numColumns={2} // Cria a grade com 2 colunas
                 contentContainerStyle={styles.listContainer}
             />
 
@@ -113,12 +114,11 @@ export default function MaterialApoioScreen() {
                             <Ionicons name="close-circle" size={30} color="#fff" />
                         </TouchableOpacity>
 
-                        <Text style={styles.modalTitle}>{dicaSelecionada?.title}</Text>
+                        <Text style={styles.modalTitle}>{dicaSelecionada?.titulo}</Text>
                         <ScrollView style={styles.modalScrollView}>
-                            <Text style={styles.modalText}>{dicaSelecionada?.content}</Text>
+                            <Text style={styles.modalText}>{dicaSelecionada?.conteudo}</Text>
                         </ScrollView>
 
-                        {/* Links e PDF */}
                         {dicaSelecionada?.links?.map((link, index) => (
                             <TouchableOpacity key={index} style={styles.linkButton} onPress={() => handleOpenLink(link)}>
                                 <Ionicons name="link" size={20} color="#89CFF0" />
@@ -126,8 +126,8 @@ export default function MaterialApoioScreen() {
                             </TouchableOpacity>
                         ))}
 
-                        {dicaSelecionada?.fileName && (
-                            <TouchableOpacity style={styles.linkButton} onPress={() => handleDownloadPdf(dicaSelecionada.fileName)} disabled={downloading}>
+                        {dicaSelecionada?.nomeArquivo && (
+                            <TouchableOpacity style={styles.linkButton} onPress={() => handleDownloadPdf(dicaSelecionada.nomeArquivo)} disabled={downloading}>
                                 {downloading ? (
                                     <ActivityIndicator color="#89CFF0" />
                                 ) : (
@@ -145,8 +145,6 @@ export default function MaterialApoioScreen() {
     );
 }
 
-
-// ESTILOS
 const styles = StyleSheet.create({
     centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#89CFF0' },
     container: { flex: 1, backgroundColor: '#89CFF0' },
@@ -178,7 +176,6 @@ const styles = StyleSheet.create({
         color: 'white',
         textAlign: 'center',
     },
-    // Estilos do Modal
     modalOverlay: {
         flex: 1,
         justifyContent: 'center',

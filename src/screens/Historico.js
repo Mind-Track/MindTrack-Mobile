@@ -34,7 +34,7 @@ export default function Historico({ navigation }) {
         try {
           setLoading(true); 
           setError(null);   
-          
+
           const data = await fetchCheckins(user.id);
           setCheckins(data);
         } catch (err) {
@@ -52,12 +52,11 @@ export default function Historico({ navigation }) {
     carregaCheckins();
   }, [user]); 
 
-  // Renderiza cada item da lista
   const renderItem = ({ item }) => (
     <View style={styles.itemContainer}>
-      <Text style={styles.dateText}>{formatarData(item.dateTime)}</Text>
-      <Text style={styles.commentText}>{item.comment}</Text>
-      <Text style={styles.emoji}>{humorEmojis[item.humorLevel]}</Text>
+      <Text style={styles.dateText}>{formatarData(item.dataHora)}</Text>
+      <Text style={styles.commentText}>{item.comentario || "Sem comentário"}</Text>
+      <Text style={styles.emoji}>{humorEmojis[item.nivelHumor?.toString()] || "❓"}</Text>
     </View>
   );
 
@@ -79,7 +78,7 @@ export default function Historico({ navigation }) {
       )}
       
       {!loading && !error && checkins.length === 0 && (
-          <Text style={styles.emptyText}>Nenhum check-in encontrado.</Text>
+        <Text style={styles.emptyText}>Nenhum check-in encontrado.</Text>
       )}
     </View>
   );

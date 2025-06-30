@@ -3,7 +3,7 @@ import { Alert } from 'react-native';
 
 export const submitCheckIn = async (data) => {
   try {
-    const response = await api.post('/checkin', data);
+    const response = await api.post('/checkin/novo', data);
     return response.data;
   } catch (error) {
     console.error('Erro ao enviar check-in:', error.response?.data || error.message);
@@ -17,7 +17,7 @@ export const fetchCheckins = async (userId) => {
     throw new Error("ID do usuário não fornecido para buscar histórico.");
   }
   try {
-    const response = await api.get(`/historico/${userId}`);
+    const response = await api.get(`/checkin/historico/${userId}`);
     return response.data;
   } catch (error) {
     console.error("Erro ao buscar check-ins:", error.message);

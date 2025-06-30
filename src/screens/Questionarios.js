@@ -35,7 +35,14 @@ export default function QuestionariosScreen() {
         setLoading(true);
         try {
             const data = await listarQuestionariosPorFuncionario(user.id);
-            setQuestionarios(data);
+
+            // Marcar todos como não respondidos por padrão, ou adapte com base no backend
+            const questionariosComStatus = data.map(q => ({
+                ...q,
+                respondido: false // ajuste aqui se tiver essa informação vinda da API
+            }));
+
+            setQuestionarios(questionariosComStatus);
         } catch (error) {
             Alert.alert("Erro", "Não foi possível carregar os questionários.");
         } finally {
@@ -47,7 +54,7 @@ export default function QuestionariosScreen() {
         if (isFocused) {
             carregarDados();
         }
-    }, [isFocused]); 
+    }, [isFocused]);
 
     const renderItem = ({ item }) => {
         const respondido = item.respondido;
@@ -58,11 +65,11 @@ export default function QuestionariosScreen() {
                     styles.itemContainer,
                     !respondido && styles.itemNaoRespondido 
                 ]}
-                disabled={respondido} 
+                disabled={respondido}
                 onPress={() => navigation.navigate('ResponderQuestionario', { questionarioId: item.id })}
             >
-                <Text style={styles.itemTitle}>Tema: {item.title}</Text>
-                <Text style={styles.itemDueDate}>Prazo: {formatarData(item.dueDate)}</Text>
+                <Text style={styles.itemTitle}>Tema: {item.titulo}</Text>
+                <Text style={styles.itemDueDate}>Prazo: {formatarData(item.dataValidade)}</Text>
                 
                 {respondido ? (
                     <Text style={styles.statusTextRespondido}>Já respondido</Text>
