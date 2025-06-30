@@ -1,33 +1,21 @@
-# MindTrack-Mobile
+# TCC-MindTrack: Sistema para acompanhamento do bem estar no ambiente de trabalho
 
-Dependencias a serem baixadas:
+Este repositório corresponde à aplicação Mobile do sistema desenvolvido como Trabalho de Conclusão de Curso no curso de Análise e Desenvolvimento de Sistemas da UFPR. O sistema tem como objetivo auxiliar departamentos de Recursos Humanos no monitoramento do bem-estar emocional dos colaboradores.
 
-npm install
+## Tecnologia utilizada:
+- React Native: 18.3.1
 
-npm install expo react react-native
+### Primeiro, é necessário clonar o projeto
+1. No GitHub.com, navegue até https://github.com/Mind-Track/MindTrack-Mobile.
+2. Nas opções acima dos arquivos do repositório selecione Code.
+3. Copie o código SSH ou HTTPS.
+4. Abra o terminal e execute git clone git@github.com:Mind-Track/MindTrack-Mobile.git (ou HTTPS https://github.com/Mind-Track/MindTrack-Mobile.git).
 
-npm install @react-navigation/native
+### É necessário possuir o **NPM** instalado
+1. Execute 'npm install'
+2. Execute 'ngx expo start'
 
-npm install @react-navigation/stack
-
-npm install @react-navigation/native react-native-screens react-native-safe-area-context react-native-gesture-handler react-native-reanimated react-native-vector-icons
-
-expo install react-native-screens react-native-safe-area-context react-native-gesture-handler react-native-reanimated react-native-vector-icons
-
-npm install -g expo-cli
-
-npm install axios
-
-
-
-comando de iniciar projeto:
-
-npx expo start
-
-problema com iniciar projeto:
-
-config do expo no node_modules
-
-pasta expo arquivo AppEntry.js
-
-se necessário alterar rota do App, indicando localização exata
+Desenvolvido por:
+- LEONARDO EUGÊNIO PANCERI DE ARAUJO
+- NICOLAS PORTELA BARBOSA
+- RICARDO DE PAULA GOMES
