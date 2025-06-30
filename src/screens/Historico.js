@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   itemContainer: {
-    backgroundColor: "#3E2F5B",
+    backgroundColor: "#162B61",
     marginVertical: 5,
     borderRadius: 10,
     flexDirection: "row",

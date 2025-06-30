@@ -201,23 +201,120 @@ export default function ResponderQuestionarioScreen() {
 
 // --- Estilos ---
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#89CFF0' },
-    centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#89CFF0' },
-    header: { padding: 20, backgroundColor: '#162B61', borderBottomLeftRadius: 20, borderBottomRightRadius: 20, marginBottom: 10 },
-    title: { fontSize: 24, fontWeight: 'bold', color: '#fff', textAlign: 'center', marginBottom: 10 },
-    description: { fontSize: 16, color: '#ddd', textAlign: 'center' },
-    perguntaBox: { backgroundColor: '#366AEE', margin: 20, padding: 20, borderRadius: 15 },
-    perguntaTexto: { fontSize: 18, fontWeight: 'bold', color: '#fff', marginBottom: 20 },
-    opcoesContainer: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 10 },
-    opcaoBotao: { borderWidth: 2, borderColor: '#fff', backgroundColor: 'transparent', borderRadius: 10, paddingVertical: 10, paddingHorizontal: 15, minWidth: 80, alignItems: 'center' },
-    opcaoSelecionada: { backgroundColor: '#fff' },
-    opcaoTexto: { color: '#fff', fontWeight: 'bold' },
-    opcaoTextoSelecionado: { color: '#366AEE' },
-    checkboxContainer: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8 },
-    checkboxLabel: { color: '#fff', fontSize: 16, marginLeft: 10 },
-    respostaAberta: { backgroundColor: 'rgba(0,0,0,0.2)', color: '#fff', padding: 10, borderRadius: 5, minHeight: 80, textAlignVertical: 'top' },
-    contadorCaracteres: { color: '#eee', textAlign: 'right', fontSize: 12, marginTop: 4 },
-    btnEnviar: { backgroundColor: '#162B61', padding: 15, margin: 20, borderRadius: 15, alignItems: 'center' },
-    btnDesabilitado: { backgroundColor: '#A0A0A0' },
-    btnEnviarTexto: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
+  container: {
+    flex: 1,
+    backgroundColor: '#89CFF0',
+  },
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#89CFF0',
+  },
+
+  header: {
+    padding: 20,
+    backgroundColor: '#162B61',
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    marginBottom: 10,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#fff',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  description: {
+    fontSize: 16,
+    color: '#ddd',
+    textAlign: 'center',
+  },
+
+  perguntaBox: {
+    backgroundColor: '#366AEE',
+    margin: 20,
+    padding: 20,
+    borderRadius: 15,
+  },
+  perguntaTexto: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 20,
+  },
+
+  // Estilos para opções (LIKERT, SIM/NÃO)
+  opcoesContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 10,
+  },
+  opcaoBotao: {
+    borderWidth: 2,
+    borderColor: '#fff',
+    backgroundColor: 'transparent',
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    minWidth: 80,
+    alignItems: 'center',
+  },
+  opcaoSelecionada: {
+    backgroundColor: '#fff',
+  },
+  opcaoTexto: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  opcaoTextoSelecionado: {
+    color: '#366AEE',
+  },
+
+  // Estilos para múltipla escolha (checkbox)
+  checkboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  checkboxLabel: {
+    color: '#fff',
+    fontSize: 16,
+    marginLeft: 10,
+  },
+
+  // Estilos para resposta aberta (textarea)
+  respostaAberta: {
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    color: '#fff',
+    padding: 10,
+    borderRadius: 5,
+    minHeight: 80,
+    textAlignVertical: 'top',
+  },
+  contadorCaracteres: {
+    color: '#eee',
+    textAlign: 'right',
+    fontSize: 12,
+    marginTop: 4,
+  },
+
+  // Botão enviar
+  btnEnviar: {
+    backgroundColor: '#162B61',
+    padding: 15,
+    margin: 20,
+    borderRadius: 15,
+    alignItems: 'center',
+  },
+  btnDesabilitado: {
+    backgroundColor: '#A0A0A0',
+  },
+  btnEnviarTexto: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
 });

@@ -35,7 +35,7 @@ function AppStack() {
       <Stack.Screen 
         name="ResponderQuestionario" 
         component={ResponderQuestionario} 
-        options={{ title: 'Respondendo Questionário' }} 
+        options={{ title: 'Respondendo Questionário', headerStyle: { backgroundColor: '#162B61' }, headerTintColor: '#FFFFFF' }} 
       /> 
     </Stack.Navigator>
   );
