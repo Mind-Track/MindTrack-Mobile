@@ -13,7 +13,7 @@ Este repositório corresponde à aplicação Mobile do sistema desenvolvido como
 
 ### É necessário possuir o **NPM** instalado
 1. Execute 'npm install'
-2. Execute 'ngx expo start'
+2. Execute 'npx expo start'
 
 Desenvolvido por:
 - LEONARDO EUGÊNIO PANCERI DE ARAUJO
