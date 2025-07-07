@@ -59,7 +59,6 @@ export default function Dashboard({ navigation }) {
                 setQuestionarios(questionariosOrdenados);
 
             } catch (error) {
-                Alert.alert("Erro", "Não foi possível carregar os dados do dashboard.");
             } finally {
                 setLoading(false);
             }

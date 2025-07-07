@@ -25,7 +25,7 @@ const formatarData = (dataISO) => {
 export default function QuestionariosScreen() {
     const { user } = useAuth();
     const navigation = useNavigation();
-    const isFocused = useIsFocused(); 
+    const isFocused = useIsFocused();
 
     const [questionarios, setQuestionarios] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -36,15 +36,25 @@ export default function QuestionariosScreen() {
         try {
             const data = await listarQuestionariosPorFuncionario(user.id);
 
-            // Marcar todos como não respondidos por padrão, ou adapte com base no backend
-            const questionariosComStatus = data.map(q => ({
+            const lista = Array.isArray(data) ? data : [];
+
+            const questionariosComStatus = lista.map(q => ({
                 ...q,
-                respondido: false // ajuste aqui se tiver essa informação vinda da API
+                respondido: false
             }));
 
             setQuestionarios(questionariosComStatus);
         } catch (error) {
-            Alert.alert("Erro", "Não foi possível carregar os questionários.");
+            const mensagemErro = error?.response?.data?.message || error?.message || "";
+
+            if (
+                error?.response?.status === 404 &&
+                mensagemErro.includes("Nenhum questionário disponível para o funcionário informado.")
+            ) {
+                setQuestionarios([]);
+            } else {
+                Alert.alert("Erro", "Não foi possível carregar os questionários.");
+            }
         } finally {
             setLoading(false);
         }
@@ -63,14 +73,14 @@ export default function QuestionariosScreen() {
             <TouchableOpacity
                 style={[
                     styles.itemContainer,
-                    !respondido && styles.itemNaoRespondido 
+                    !respondido && styles.itemNaoRespondido
                 ]}
                 disabled={respondido}
                 onPress={() => navigation.navigate('ResponderQuestionario', { questionarioId: item.id })}
             >
                 <Text style={styles.itemTitle}>Tema: {item.titulo}</Text>
                 <Text style={styles.itemDueDate}>Prazo: {formatarData(item.dataValidade)}</Text>
-                
+
                 {respondido ? (
                     <Text style={styles.statusTextRespondido}>Já respondido</Text>
                 ) : (
@@ -93,7 +103,7 @@ export default function QuestionariosScreen() {
                 contentContainerStyle={styles.listContainer}
                 ListEmptyComponent={() => (
                     <View style={styles.centered}>
-                        <Text style={styles.emptyText}>Nenhum questionário disponível no momento.</Text>
+                        <Text style={styles.emptyText}>Parabéns! Você já respondeu todos os questionários disponíveis.</Text>
                     </View>
                 )}
             />
@@ -107,7 +117,7 @@ const styles = StyleSheet.create({
     centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     listContainer: { padding: 20 },
     itemContainer: {
-        backgroundColor: '#162B61', 
+        backgroundColor: '#162B61',
         padding: 20,
         borderRadius: 15,
         marginBottom: 15,
@@ -118,7 +128,7 @@ const styles = StyleSheet.create({
         shadowRadius: 4,
     },
     itemNaoRespondido: {
-        backgroundColor: '#366AEE', 
+        backgroundColor: '#366AEE',
     },
     itemTitle: {
         fontSize: 18,
@@ -133,7 +143,7 @@ const styles = StyleSheet.create({
     },
     statusTextRespondido: {
         fontSize: 16,
-        color: '#A0A0A0', 
+        color: '#A0A0A0',
         fontWeight: 'bold',
         alignSelf: 'flex-end',
     },

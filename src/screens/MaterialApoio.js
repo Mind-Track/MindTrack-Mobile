@@ -100,6 +100,11 @@ export default function MaterialApoioScreen() {
                 renderItem={renderDicaCard}
                 keyExtractor={(item) => item.id.toString()}
                 contentContainerStyle={styles.listContainer}
+                ListEmptyComponent={() => (
+                    <Text style={styles.emptyText}>
+                        Não há materiais de apoio no momento.
+                    </Text>
+                )}
             />
 
             <Modal
@@ -222,5 +227,11 @@ const styles = StyleSheet.create({
         color: 'white',
         fontWeight: 'bold',
         marginLeft: 10,
+    },
+    emptyText: {
+        fontSize: 18,
+        color: '#162B61',
+        textAlign: 'center',
+        paddingHorizontal: 20,
     },
 });
