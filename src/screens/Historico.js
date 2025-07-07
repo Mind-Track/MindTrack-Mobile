@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, FlatList, ActivityIndicator, Alert } from 'react-native';
+import { useIsFocused } from '@react-navigation/native';
 
-import { useAuth } from '../contexts/AuthContext'; 
+import { useAuth } from '../contexts/AuthContext';
 import { fetchCheckins } from '../services/checkinService';
 
 const humorEmojis = {
@@ -12,8 +13,9 @@ const humorEmojis = {
   "5": "😁",
 };
 
+
 const formatarData = (dataISO) => {
-  if (!dataISO) return 'Data inválida'; 
+  if (!dataISO) return 'Data inválida';
   const data = new Date(dataISO);
   const dia = String(data.getDate()).padStart(2, "0");
   const mes = String(data.getMonth() + 1).padStart(2, "0");
@@ -23,34 +25,37 @@ const formatarData = (dataISO) => {
 
 export default function Historico({ navigation }) {
   const { user } = useAuth();
+  const isFocused = useIsFocused();
 
   const [checkins, setCheckins] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const carregaCheckins = async () => {
-      if (user && user.id) {
-        try {
-          setLoading(true); 
-          setError(null);   
+  const carregaCheckins = async () => {
+    if (user && user.id) {
+      try {
+        setLoading(true); 
+        setError(null);
 
-          const data = await fetchCheckins(user.id);
-          setCheckins(data);
-        } catch (err) {
-          setError(err.message || "Erro ao carregar dados da API");
-          Alert.alert("Erro", "Não foi possível carregar o histórico.");
-        } finally {
-          setLoading(false);
-        }
-      } else {
-        setCheckins([]); 
+        const data = await fetchCheckins(user.id);
+        setCheckins(data);
+      } catch (err) {
+        setError(err.message || "Erro ao carregar dados da API");
+        Alert.alert("Erro", "Não foi possível carregar o histórico.");
+      } finally {
         setLoading(false);
       }
-    };
+    } else {
+      setCheckins([]); 
+      setLoading(false);
+    }
+  };
 
+  if (isFocused) {
     carregaCheckins();
-  }, [user]); 
+  }
+}, [isFocused, user]);
 
   const renderItem = ({ item }) => (
     <View style={styles.itemContainer}>
@@ -76,7 +81,7 @@ export default function Historico({ navigation }) {
           showsVerticalScrollIndicator={true}
         />
       )}
-      
+
       {!loading && !error && checkins.length === 0 && (
         <Text style={styles.emptyText}>Nenhum check-in encontrado.</Text>
       )}
@@ -110,14 +115,14 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   dateText: {
-    fontSize: 16, 
-    fontWeight: "bold", 
+    fontSize: 16,
+    fontWeight: "bold",
     color: "#FFF",
     flex: 1.5,
     textAlign: 'left',
   },
   commentText: {
-    fontSize: 16, 
+    fontSize: 16,
     color: "#FFF",
     flex: 3,
     textAlign: 'center',
