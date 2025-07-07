@@ -15,7 +15,6 @@ export const AuthProvider = ({ children }) => {
         const storedToken = await AsyncStorage.getItem('@Auth:token');
 
         if (storedUser && storedToken) {
-          // Define token no header para todas requisições
           api.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
           setUser(JSON.parse(storedUser));
         }
@@ -29,7 +28,6 @@ export const AuthProvider = ({ children }) => {
     loadStorageData();
   }, []);
 
-  // --- FUNÇÕES DE AUTENTICAÇÃO ---
 
   async function login(credentials) {
     try {
@@ -45,9 +43,7 @@ export const AuthProvider = ({ children }) => {
       setUser(user);
 
       if (token) {
-        // Define o token no header Authorization do axios
         api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-        // Salva token no AsyncStorage para persistência
         await AsyncStorage.setItem('@Auth:token', token);
       }
 
@@ -61,14 +57,11 @@ export const AuthProvider = ({ children }) => {
 
   async function logout() {
     try {
-      // Se quiser, pode chamar uma API para invalidar token no backend aqui
     } catch (error) {
       console.error("Erro no logout da API", error);
     } finally {
       setUser(null);
-      // Remove token do header axios
       delete api.defaults.headers.common['Authorization'];
-      // Remove dados do AsyncStorage
       await AsyncStorage.removeItem('@Auth:user');
       await AsyncStorage.removeItem('@Auth:token');
     }
