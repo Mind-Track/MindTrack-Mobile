@@ -4,7 +4,7 @@ import { Platform } from 'react-native';
 const isWeb = Platform.OS === 'web';
 
 const api = axios.create({
-  baseURL: isWeb ? 'http://localhost:8080' : 'http://192.168.18.62:8080',
+  baseURL: isWeb ? 'http://localhost:8080' : 'http://192.168.238.95:8080',
   withCredentials: true,
   timeout: 10000,
   headers: {

@@ -60,7 +60,7 @@ export default function Historico({ navigation }) {
   const renderItem = ({ item }) => (
     <View style={styles.itemContainer}>
       <Text style={styles.dateText}>{formatarData(item.dataHora)}</Text>
-      <Text style={styles.commentText}>{item.comentario || "Sem comentário"}</Text>
+      <Text style={styles.commentText}>{item.comentario}</Text>
       <Text style={styles.emoji}>{humorEmojis[item.nivelHumor?.toString()] || "❓"}</Text>
     </View>
   );
